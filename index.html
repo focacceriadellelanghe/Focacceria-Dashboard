@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, viewport-fit=cover">
+<title>Focacceria delle Langhe</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;--bg4:#22222f;--border:rgba(255,255,255,0.07);--accent:#e8b86d;--accent2:#d4845a;--accent3:#7eb8a4;--text:#f0f0f8;--text2:#8888aa;--text3:#555570;--green:#5cb88a;--red:#e06060;--radius:16px;--radius-sm:10px}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:28px 0;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform 0.3s}
+.sidebar-logo{padding:0 24px 32px;border-bottom:1px solid var(--border)}
+.sidebar-logo .brand{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;letter-spacing:0.05em;color:var(--accent);line-height:1.2}
+.sidebar-logo .sub{font-size:10px;color:var(--text3);letter-spacing:0.15em;text-transform:uppercase;margin-top:4px}
+.nav{padding:20px 0;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 24px;color:var(--text2);cursor:pointer;font-size:12px;letter-spacing:0.05em;transition:all 0.2s;border-left:2px solid transparent;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(232,184,109,0.05)}
+.nav-icon{font-size:14px;width:18px;text-align:center}
+.sidebar-bottom{padding:20px 24px;border-top:1px solid var(--border)}
+.last-update{font-size:10px;color:var(--text3);line-height:1.6}
+.main{margin-left:220px;flex:1;padding:32px;min-height:100vh}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.page-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:700;letter-spacing:-0.02em}
+.page-title span{color:var(--accent)}
+.header-date{font-size:11px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase}
+.page{display:none}
+.page.active{display:block}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:border-color 0.3s,box-shadow 0.3s}
+.kpi-card.positive-card{border-color:rgba(92,184,138,0.5);box-shadow:0 0 0 1px rgba(92,184,138,0.15)}
+.kpi-card.negative-card{border-color:rgba(224,96,96,0.5);box-shadow:0 0 0 1px rgba(224,96,96,0.15)}
+.kpi-card.neutral-card{border-color:rgba(126,184,164,0.4)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:0.4;transition:background 0.3s}
+.kpi-card.positive-card::before{background:var(--green);opacity:0.8}
+.kpi-card.negative-card::before{background:var(--red);opacity:0.8}
+.kpi-card.neutral-card::before{background:var(--accent3);opacity:0.8}
+.kpi-label{font-size:10px;color:var(--text3);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px}
+.kpi-value{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;letter-spacing:-0.03em;line-height:1}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500}
+.badge.up{background:rgba(92,184,138,0.15);color:var(--green)}
+.badge.down{background:rgba(224,96,96,0.15);color:var(--red)}
+.badge.neutral{background:rgba(255,255,255,0.07);color:var(--text2)}
+.chart-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+.chart-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.chart-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:8px;flex-wrap:wrap}
+.chart-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.02em}
+.chart-meta{font-size:10px;color:var(--text3)}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap.tall{height:280px}
+.chart-wrap.short{height:160px}
+/* DATE FILTER */
+.date-filter{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.period-tabs{display:flex;gap:3px;background:var(--bg4);border-radius:8px;padding:3px}
+.period-tab{padding:4px 10px;border-radius:5px;font-size:10px;cursor:pointer;color:var(--text3);transition:all 0.2s;user-select:none;white-space:nowrap}
+.period-tab.active{background:var(--bg2);color:var(--text)}
+.date-inputs{display:flex;align-items:center;gap:4px}
+.date-input{background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text2);font-family:'DM Mono',monospace;font-size:10px;width:90px;outline:none;max-width:100%;box-sizing:border-box}
+.date-input:focus{border-color:var(--accent);color:var(--text)}
+.date-sep{font-size:10px;color:var(--text3)}
+.btn-apply{background:var(--accent);color:#1a1400;border:none;border-radius:6px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;font-weight:600}
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;padding:0 12px 12px;border-bottom:1px solid var(--border)}
+.data-table td{padding:12px;font-size:12px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(255,255,255,0.02)}
+.num{font-variant-numeric:tabular-nums}
+.positive{color:var(--green)}
+.negative{color:var(--red)}
+/* WHATIF */
+.whatif-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.input-group{margin-bottom:16px}
+.input-label{font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;display:block}
+.input-field{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;width:100%;transition:border-color 0.2s;outline:none;box-sizing:border-box;-webkit-appearance:none;appearance:none}
+.input-field:focus{border-color:var(--accent)}
+.input-field.editable{border-color:rgba(232,184,109,0.3);background:rgba(232,184,109,0.05)}
+.btn{padding:10px 20px;border-radius:var(--radius-sm);font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;transition:all 0.2s;border:none;letter-spacing:0.05em;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#1a1400;font-weight:600}
+.btn-primary:hover{background:#f0c87d}
+.btn-secondary{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+.section-label{font-size:10px;color:var(--text3);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.alert{background:rgba(232,184,109,0.08);border:1px solid rgba(232,184,109,0.2);border-radius:var(--radius-sm);padding:12px 16px;font-size:12px;color:var(--accent);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.donut-labels{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.donut-label-row{display:flex;align-items:center;justify-content:space-between;font-size:11px}
+.donut-dot{width:8px;height:8px;border-radius:50%;margin-right:8px;flex-shrink:0}
+/* HEATMAP */
+.heatmap-wrap{overflow-x:auto}
+.tooltip-custom{position:fixed;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--text);pointer-events:none;z-index:1000;display:none;min-width:160px;box-shadow:0 8px 32px rgba(0,0,0,0.5)}
+/* MOBILE */
+.hamburger{display:none;position:fixed;top:16px;left:16px;z-index:200;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:16px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0;padding:20px 16px;padding-top:64px;overflow-x:hidden}
+  .hamburger{display:flex}
+  .overlay.active{display:block}
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .chart-grid{grid-template-columns:1fr}
+  .chart-grid-3{grid-template-columns:1fr}
+  .chart-grid-2{grid-template-columns:1fr}
+  .whatif-grid{grid-template-columns:1fr}
+  .page-title{font-size:20px}
+  .kpi-value{font-size:20px}
+  .kpi-card{padding:14px}
+  .date-filter{flex-direction:column;align-items:flex-start}
+  .date-inputs{flex-wrap:wrap}
+  .date-input{width:80px}
+}
+@media(max-width:500px){
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .kpi-value{font-size:18px}
+  .kpi-label{font-size:9px}
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD -->
+<div id="pwd-screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0a0f;position:fixed;inset:0;z-index:9999">
+  <div style="background:#111118;border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:48px 40px;width:100%;max-width:360px;text-align:center;font-family:'DM Mono',monospace">
+    <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#e8b86d;margin-bottom:4px">Focacceria delle Langhe</div>
+    <div style="font-size:10px;color:#555570;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:32px">Dashboard Analytics 2026</div>
+    <input type="password" id="pwd-input" placeholder="Password di accesso"
+      style="width:100%;background:#22222f;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;color:#f0f0f8;font-family:'DM Mono',monospace;font-size:14px;outline:none;margin-bottom:12px;box-sizing:border-box"
+      onkeydown="if(event.key==='Enter')checkPwd()">
+    <div id="pwd-error" style="display:none;color:#e06060;font-size:11px;margin-bottom:10px">Password errata. Riprova.</div>
+    <button onclick="checkPwd()" style="width:100%;background:#e8b86d;color:#1a1400;border:none;border-radius:10px;padding:14px;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer">Accedi →</button>
+  </div>
+</div>
+
+<button class="hamburger" onclick="toggleSidebar()">☰</button>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="tooltip-custom" id="tooltip"></div>
+
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">Focacceria<br>delle Langhe</div>
+    <div class="sub">Analytics 2026</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('oggi')"><span class="nav-icon">◉</span> Oggi</div>
+    <div class="nav-item" onclick="showPage('andamento')"><span class="nav-icon">◈</span> Andamento</div>
+    <div class="nav-item" onclick="showPage('mensile')"><span class="nav-icon">◇</span> Mensile</div>
+    <div class="nav-item" onclick="showPage('marketing')"><span class="nav-icon">◆</span> Marketing</div>
+    <div class="nav-item" onclick="showPage('whatif')"><span class="nav-icon">◎</span> What If</div>
+    <div class="nav-item" onclick="showPage('inserimento')"><span class="nav-icon">✦</span> Inserimento</div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="last-update" id="last-update-sidebar">Ultimo aggiornamento<br>—</div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- PAGE OGGI -->
+<div class="page active" id="page-oggi">
+  <div class="page-header">
+    <div class="page-title">Overview <span>Oggi</span></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="header-date" id="today-label">—</div>
+      <div class="date-inputs">
+        <input type="date" class="date-input" id="overview-date" style="width:110px" onchange="changeOverviewDay(this.value)">
+        <button class="btn-apply" onclick="changeOverviewDay(document.getElementById('overview-date').value)">OK</button>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-grid" id="kpi-oggi"></div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Fatturato giornaliero</div><div class="chart-meta" id="lbl-fat30">Ultimi 30 giorni</div></div>
+        <div class="date-filter">
+          <div class="period-tabs">
+            <div class="period-tab active" onclick="setFilter('fat30','7g',this)">7g</div>
+            <div class="period-tab" onclick="setFilter('fat30','30g',this)">30g</div>
+            <div class="period-tab" onclick="setFilter('fat30','anno',this)">Anno</div>
+          </div>
+          <div class="date-inputs">
+            <input type="date" class="date-input" id="fat30-from">
+            <span class="date-sep">→</span>
+            <input type="date" class="date-input" id="fat30-to">
+            <button class="btn-apply" onclick="applyFilter('fat30')">OK</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-fat30"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">Canali oggi — Fatturato</div></div>
+      <div class="chart-wrap short" id="wrap-canali-fat"><canvas id="chart-canali-fat"></canvas></div>
+      <div class="donut-labels" id="donut-fat"></div>
+    </div>
+  </div>
+
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">Canali oggi — Coperti</div></div>
+      <div class="chart-wrap short" id="wrap-canali-cop"><canvas id="chart-canali-cop"></canvas></div>
+      <div class="donut-labels" id="donut-cop"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Media fatturato per giorno</div><div class="chart-meta">Anno corrente</div></div>
+      </div>
+      <div class="chart-wrap short"><canvas id="chart-dow"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Promo Spicchio Dolce</div><div class="chart-meta" id="lbl-promo30">Ultimi 30 giorni</div></div>
+        <div class="date-filter">
+          <div class="period-tabs">
+            <div class="period-tab active" onclick="setFilter('promo30','30g',this)">30g</div>
+            <div class="period-tab" onclick="setFilter('promo30','mese',this)">Mese</div>
+            <div class="period-tab" onclick="setFilter('promo30','anno',this)">Anno</div>
+          </div>
+          <div class="date-inputs">
+            <input type="date" class="date-input" id="promo30-from">
+            <span class="date-sep">→</span>
+            <input type="date" class="date-input" id="promo30-to">
+            <button class="btn-apply" onclick="applyFilter('promo30')">OK</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap short"><canvas id="chart-promo30"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Coperto medio</div><div class="chart-meta" id="lbl-cop-medio">Mese corrente</div></div>
+        <div class="date-filter">
+          <div class="period-tabs">
+            <div class="period-tab active" onclick="setFilter('copmed','mese',this)">Mese</div>
+            <div class="period-tab" onclick="setFilter('copmed','30g',this)">30g</div>
+            <div class="period-tab" onclick="setFilter('copmed','anno',this)">Anno</div>
+          </div>
+          <div class="date-inputs">
+            <input type="date" class="date-input" id="copmed-from">
+            <span class="date-sep">→</span>
+            <input type="date" class="date-input" id="copmed-to">
+            <button class="btn-apply" onclick="applyFilter('copmed')">OK</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap short"><canvas id="chart-copmed"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE ANDAMENTO -->
+<div class="page" id="page-andamento">
+  <div class="page-header">
+    <div class="page-title">Andamento <span>Annuale</span></div>
+  </div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-header">
+      <div><div class="chart-title">Fatturato — trend</div><div class="chart-meta" id="lbl-trend">Ultimi 7 giorni</div></div>
+      <div class="date-filter">
+        <div class="period-tabs">
+          <div class="period-tab active" onclick="setFilter('trend','7g',this)">7g</div>
+          <div class="period-tab" onclick="setFilter('trend','30g',this)">30g</div>
+          <div class="period-tab" onclick="setFilter('trend','anno',this)">Anno</div>
+        </div>
+        <div class="date-inputs">
+          <input type="date" class="date-input" id="trend-from">
+          <span class="date-sep">→</span>
+          <input type="date" class="date-input" id="trend-to">
+          <button class="btn-apply" onclick="applyFilter('trend')">OK</button>
+        </div>
+      </div>
+    </div>
+    <div class="chart-wrap tall"><canvas id="chart-trend"></canvas></div>
+  </div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">Heatmap anno</div><div class="chart-meta">Fatturato per giorno</div></div>
+      <div class="heatmap-wrap" id="heatmap"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:10px;color:var(--text3)">
+        <span>meno</span>
+        <div style="width:10px;height:10px;border-radius:2px;background:#5c1a1a"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#8c3a3a"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#c45a5a"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#e08080"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:#5cb88a"></div>
+        <span>più</span>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Coperti & Scontrini</div></div>
+        <div class="date-filter">
+          <div class="period-tabs">
+            <div class="period-tab active" onclick="setFilter('coptrend','30g',this)">30g</div>
+            <div class="period-tab" onclick="setFilter('coptrend','mese',this)">Mese</div>
+            <div class="period-tab" onclick="setFilter('coptrend','anno',this)">Anno</div>
+          </div>
+          <div class="date-inputs">
+            <input type="date" class="date-input" id="coptrend-from">
+            <span class="date-sep">→</span>
+            <input type="date" class="date-input" id="coptrend-to">
+            <button class="btn-apply" onclick="applyFilter('coptrend')">OK</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-coptrend"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE MENSILE -->
+<div class="page" id="page-mensile">
+  <div class="page-header"><div class="page-title">KPI <span>Mensili</span></div></div>
+  <div class="kpi-grid" id="kpi-mensili"></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">Fatturato mensile</div><div class="chart-meta">2026</div></div>
+      <div class="chart-wrap"><canvas id="chart-fat-mensile"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">Costi vs Ricavi</div><div class="chart-meta">Struttura P&L</div></div>
+      <div class="chart-wrap"><canvas id="chart-pl"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-header"><div class="chart-title">Tabella KPI mensili</div></div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><table class="data-table" id="table-mensile" style="min-width:500px"></table></div>
+  </div>
+</div>
+
+<!-- PAGE MARKETING -->
+<div class="page" id="page-marketing">
+  <div class="page-header"><div class="page-title">Marketing <span>& Clienti</span></div></div>
+  <div class="kpi-grid" id="kpi-mkt"></div>
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">ROI ADV %</div></div>
+      <div class="chart-wrap"><canvas id="chart-roi"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div class="chart-title">CAC</div><div class="chart-meta">Costo acquisizione cliente €</div></div>
+      <div class="chart-wrap"><canvas id="chart-cac"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-header"><div class="chart-title">Funnel Click → Lead → Cliente</div><div class="chart-meta">Tasso conversione tra ogni step</div></div>
+    <div class="chart-wrap tall"><canvas id="chart-funnel"></canvas></div>
+  </div>
+</div>
+
+<!-- PAGE WHAT IF -->
+<div class="page" id="page-whatif">
+  <div class="page-header"><div class="page-title">Simulatore <span>What If</span></div></div>
+  <div class="alert">⚡ Modalità simulazione — i valori non vengono salvati</div>
+  <div class="whatif-grid">
+    <div class="chart-card">
+      <div class="section-label">Parametri simulazione</div>
+      <div class="input-group"><label class="input-label">Fatturato giornaliero target €</label><input type="number" class="input-field editable" id="wi-fat-target" value="400" step="10"></div>
+      <div class="input-group"><label class="input-label">Giorni apertura al mese</label><input type="number" class="input-field editable" id="wi-giorni" value="25"></div>
+      <div class="input-group"><label class="input-label">Food cost %</label><input type="number" class="input-field editable" id="wi-foodcost" value="30" step="0.5"></div>
+      <div class="input-group"><label class="input-label">Personale € / mese</label><input type="number" class="input-field editable" id="wi-personale" value="4854" step="100"></div>
+      <div class="input-group"><label class="input-label">Costi fissi € / mese</label><input type="number" class="input-field editable" id="wi-fissi" value="3760" step="100"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-primary" onclick="calcWhatIf()">Calcola</button>
+        <button class="btn btn-secondary" onclick="resetWhatIf()">Reset</button>
+      </div>
+    </div>
+    <div class="chart-card"><div class="section-label">Risultati proiezione mensile</div><div id="wi-results"></div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header"><div class="chart-title">Proiezione vs Reale</div></div>
+    <div class="chart-wrap tall"><canvas id="chart-whatif"></canvas></div>
+  </div>
+</div>
+
+<!-- PAGE INSERIMENTO -->
+<div class="page" id="page-inserimento">
+  <div class="page-header"><div class="page-title">Inserimento <span>Dati</span></div></div>
+  <div class="whatif-grid">
+    <div class="chart-card">
+      <div class="section-label">Dati giornalieri</div>
+      <div class="input-group"><label class="input-label">Data</label><input type="date" class="input-field" id="ins-data"></div>
+      <div class="input-group"><label class="input-label">Fatturato Locale €</label><input type="number" class="input-field" id="ins-locale" step="0.01" placeholder="0.00"></div>
+      <div class="input-group"><label class="input-label">Fatturato Asporto €</label><input type="number" class="input-field" id="ins-asporto" step="0.01" placeholder="0.00"></div>
+      <div class="input-group"><label class="input-label">Fatturato Delivery €</label><input type="number" class="input-field" id="ins-delivery" step="0.01" placeholder="0.00"></div>
+      <div class="input-group"><label class="input-label">Fatturato da Promo €</label><input type="number" class="input-field" id="ins-fat-promo" step="0.01" placeholder="0.00"></div>
+      <div class="input-group"><label class="input-label">Scontrini totali</label><input type="number" class="input-field" id="ins-scontrini"></div>
+      <div class="input-group"><label class="input-label">Coperti Locale</label><input type="number" class="input-field" id="ins-cop-locale"></div>
+      <div class="input-group"><label class="input-label">Coperti Asporto</label><input type="number" class="input-field" id="ins-cop-asporto"></div>
+      <div class="input-group"><label class="input-label">Coperti Delivery</label><input type="number" class="input-field" id="ins-cop-delivery"></div>
+      <div class="input-group"><label class="input-label">Promo riscattate</label><input type="number" class="input-field" id="ins-promo"></div>
+      <div class="input-group"><label class="input-label">Note</label><input type="text" class="input-field" id="ins-note" placeholder="Evento, meteo..."></div>
+      <div style="margin:16px 0 8px;padding-top:16px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);letter-spacing:0.15em;text-transform:uppercase">Dati Marketing (totale mese)</div>
+      <div class="input-group"><label class="input-label">Lead (totale mese)</label><input type="number" class="input-field" id="ins-lead" placeholder="Es. 200"></div>
+      <div class="input-group"><label class="input-label">Click sul link (totale mese)</label><input type="number" class="input-field" id="ins-click" placeholder="Es. 5000"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveDay()">Salva giornata</button>
+    </div>
+    <div class="chart-card">
+      <div class="section-label">Ultimi 7 giorni inseriti</div>
+      <table class="data-table" id="table-recent"></table>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const RAW = {"daily":[{"data":"2026-01-01","giorno":"Giovedì","fatturato_locale":null,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":null,"scontrini_totali":null,"coperti_totali":null,"coperto_medio":null,"promo_riscattate":null,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-02","giorno":"Venerdì","fatturato_locale":288.27,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":288.27,"scontrini_totali":16.0,"coperti_totali":41.0,"coperto_medio":7.03097561,"promo_riscattate":3.0,"totale_promo":34.87,"note":null,"meteo":null},{"data":"2026-01-03","giorno":"Sabato","fatturato_locale":222.82,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":222.82,"scontrini_totali":16.0,"coperti_totali":32.0,"coperto_medio":6.963125,"promo_riscattate":3.0,"totale_promo":39.92,"note":null,"meteo":null},{"data":"2026-01-05","giorno":"Lunedì","fatturato_locale":118.82,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":118.82,"scontrini_totali":10.0,"coperti_totali":17.0,"coperto_medio":6.989411765,"promo_riscattate":2.0,"totale_promo":8.09,"note":null,"meteo":null},{"data":"2026-01-06","giorno":"Martedì","fatturato_locale":208.98,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":208.98,"scontrini_totali":12.0,"coperti_totali":22.0,"coperto_medio":9.499090909,"promo_riscattate":2.0,"totale_promo":27.0,"note":null,"meteo":null},{"data":"2026-01-07","giorno":"Mercoledì","fatturato_locale":53.82,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":53.82,"scontrini_totali":8.0,"coperti_totali":8.0,"coperto_medio":6.7275,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-08","giorno":"Giovedì","fatturato_locale":83.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":83.09,"scontrini_totali":9.0,"coperti_totali":11.0,"coperto_medio":7.553636364,"promo_riscattate":1.0,"totale_promo":5.45,"note":null,"meteo":null},{"data":"2026-01-09","giorno":"Venerdì","fatturato_locale":73.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":73.09,"scontrini_totali":8.0,"coperti_totali":11.0,"coperto_medio":6.644545455,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-10","giorno":"Sabato","fatturato_locale":329.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":329.36,"scontrini_totali":16.0,"coperti_totali":40.0,"coperto_medio":8.234,"promo_riscattate":2.0,"totale_promo":22.55,"note":null,"meteo":null},{"data":"2026-01-12","giorno":"Lunedì","fatturato_locale":114.55,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":114.55,"scontrini_totali":11.0,"coperti_totali":17.0,"coperto_medio":6.738235294,"promo_riscattate":1.0,"totale_promo":4.45,"note":null,"meteo":null},{"data":"2026-01-13","giorno":"Martedì","fatturato_locale":119.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":119.09,"scontrini_totali":10.0,"coperti_totali":13.0,"coperto_medio":9.160769231,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-14","giorno":"Mercoledì","fatturato_locale":97.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":97.91,"scontrini_totali":10.0,"coperti_totali":10.0,"coperto_medio":9.791,"promo_riscattate":1.0,"totale_promo":5.45,"note":null,"meteo":null},{"data":"2026-01-15","giorno":"Giovedì","fatturato_locale":114.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":114.45,"scontrini_totali":12.0,"coperti_totali":14.0,"coperto_medio":8.175,"promo_riscattate":3.0,"totale_promo":34.18,"note":null,"meteo":null},{"data":"2026-01-16","giorno":"Venerdì","fatturato_locale":34.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":34.45,"scontrini_totali":5.0,"coperti_totali":5.0,"coperto_medio":6.89,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-17","giorno":"Sabato","fatturato_locale":113.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":113.64,"scontrini_totali":13.0,"coperti_totali":18.0,"coperto_medio":6.313333333,"promo_riscattate":6.0,"totale_promo":38.73,"note":null,"meteo":null},{"data":"2026-01-19","giorno":"Lunedì","fatturato_locale":80.27,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":80.27,"scontrini_totali":11.0,"coperti_totali":13.0,"coperto_medio":6.174615385,"promo_riscattate":3.0,"totale_promo":17.82,"note":"Riattivato JustEat","meteo":null},{"data":"2026-01-20","giorno":"Martedì","fatturato_locale":174.55,"fatturato_asporto":null,"fatturato_delivery":27.27,"fatturato_totale":201.82,"scontrini_totali":19.0,"coperti_totali":27.0,"coperto_medio":7.474814815,"promo_riscattate":4.0,"totale_promo":43.18,"note":null,"meteo":null},{"data":"2026-01-21","giorno":"Mercoledì","fatturato_locale":223.73,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":223.73,"scontrini_totali":18.0,"coperti_totali":26.0,"coperto_medio":8.605,"promo_riscattate":3.0,"totale_promo":28.73,"note":null,"meteo":null},{"data":"2026-01-22","giorno":"Giovedì","fatturato_locale":129.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":129.45,"scontrini_totali":9.0,"coperti_totali":16.0,"coperto_medio":8.090625,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-23","giorno":"Venerdì","fatturato_locale":83.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":83.91,"scontrini_totali":10.0,"coperti_totali":11.0,"coperto_medio":7.628181818,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-24","giorno":"Sabato","fatturato_locale":205.73,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":205.73,"scontrini_totali":19.0,"coperti_totali":35.0,"coperto_medio":5.878,"promo_riscattate":9.0,"totale_promo":31.36,"note":null,"meteo":null},{"data":"2026-01-25","giorno":"Domenica","fatturato_locale":152.15,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":152.15,"scontrini_totali":1.0,"coperti_totali":11.0,"coperto_medio":13.83181818,"promo_riscattate":0.0,"totale_promo":null,"note":"Apertura Speciale amici Omar","meteo":null},{"data":"2026-01-26","giorno":"Lunedì","fatturato_locale":89.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":89.64,"scontrini_totali":10.0,"coperti_totali":12.0,"coperto_medio":7.47,"promo_riscattate":1.0,"totale_promo":22.0,"note":null,"meteo":null},{"data":"2026-01-27","giorno":"Martedì","fatturato_locale":174.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":174.09,"scontrini_totali":23.0,"coperti_totali":28.0,"coperto_medio":6.2175,"promo_riscattate":12.0,"totale_promo":73.52,"note":null,"meteo":null},{"data":"2026-01-28","giorno":"Mercoledì","fatturato_locale":113.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":113.45,"scontrini_totali":10.0,"coperti_totali":13.0,"coperto_medio":8.726923077,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-01-29","giorno":"Giovedì","fatturato_locale":113.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":113.0,"scontrini_totali":15.0,"coperti_totali":17.0,"coperto_medio":6.647058824,"promo_riscattate":3.0,"totale_promo":20.27,"note":null,"meteo":null},{"data":"2026-01-30","giorno":"Venerdì","fatturato_locale":123.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":123.91,"scontrini_totali":14.0,"coperti_totali":20.0,"coperto_medio":6.1955,"promo_riscattate":4.0,"totale_promo":35.0,"note":null,"meteo":null},{"data":"2026-02-02","giorno":"Lunedì","fatturato_locale":105.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":105.45,"scontrini_totali":10.0,"coperti_totali":12.0,"coperto_medio":8.7875,"promo_riscattate":1.0,"totale_promo":12.64,"note":null,"meteo":null},{"data":"2026-02-03","giorno":"Martedì","fatturato_locale":198.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":198.36,"scontrini_totali":27.0,"coperti_totali":31.0,"coperto_medio":6.398709677,"promo_riscattate":3.0,"totale_promo":32.27,"note":null,"meteo":null},{"data":"2026-02-04","giorno":"Mercoledì","fatturato_locale":126.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":126.0,"scontrini_totali":13.0,"coperti_totali":17.0,"coperto_medio":7.411764706,"promo_riscattate":3.0,"totale_promo":12.18,"note":null,"meteo":null},{"data":"2026-02-05","giorno":"Giovedì","fatturato_locale":138.55,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":138.55,"scontrini_totali":16.0,"coperti_totali":19.0,"coperto_medio":7.292105263,"promo_riscattate":3.0,"totale_promo":24.18,"note":null,"meteo":null},{"data":"2026-02-06","giorno":"Venerdì","fatturato_locale":161.41,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":161.41,"scontrini_totali":18.0,"coperti_totali":21.0,"coperto_medio":7.686190476,"promo_riscattate":4.0,"totale_promo":17.82,"note":null,"meteo":null},{"data":"2026-02-07","giorno":"Sabato","fatturato_locale":378.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":378.0,"scontrini_totali":28.0,"coperti_totali":40.0,"coperto_medio":9.45,"promo_riscattate":7.0,"totale_promo":85.0,"note":null,"meteo":null},{"data":"2026-02-09","giorno":"Lunedì","fatturato_locale":205.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":205.91,"scontrini_totali":27.0,"coperti_totali":29.0,"coperto_medio":7.100344828,"promo_riscattate":1.0,"totale_promo":8.91,"note":null,"meteo":null},{"data":"2026-02-10","giorno":"Martedì","fatturato_locale":199.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":199.64,"scontrini_totali":20.0,"coperti_totali":25.0,"coperto_medio":7.9856,"promo_riscattate":4.0,"totale_promo":50.73,"note":null,"meteo":null},{"data":"2026-02-11","giorno":"Mercoledì","fatturato_locale":237.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":237.18,"scontrini_totali":23.0,"coperti_totali":33.0,"coperto_medio":7.187272727,"promo_riscattate":9.0,"totale_promo":101.73,"note":null,"meteo":null},{"data":"2026-02-12","giorno":"Giovedì","fatturato_locale":109.73,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":109.73,"scontrini_totali":13.0,"coperti_totali":15.0,"coperto_medio":7.315333333,"promo_riscattate":1.0,"totale_promo":4.45,"note":null,"meteo":null},{"data":"2026-02-13","giorno":"Venerdì","fatturato_locale":196.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":196.64,"scontrini_totali":20.0,"coperti_totali":29.0,"coperto_medio":6.780689655,"promo_riscattate":7.0,"totale_promo":55.81,"note":"Cioccolatò","meteo":null},{"data":"2026-02-14","giorno":"Sabato","fatturato_locale":379.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":379.91,"scontrini_totali":28.0,"coperti_totali":42.0,"coperto_medio":9.04547619,"promo_riscattate":12.0,"totale_promo":133.09,"note":"Cioccolatò","meteo":null},{"data":"2026-02-16","giorno":"Lunedì","fatturato_locale":407.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":407.09,"scontrini_totali":31.0,"coperti_totali":61.0,"coperto_medio":6.673606557,"promo_riscattate":12.0,"totale_promo":158.46,"note":"Cioccolatò","meteo":null},{"data":"2026-02-17","giorno":"Martedì","fatturato_locale":291.73,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":291.73,"scontrini_totali":22.0,"coperti_totali":35.0,"coperto_medio":8.335142857,"promo_riscattate":6.0,"totale_promo":73.91,"note":"Cioccolatò","meteo":null},{"data":"2026-02-18","giorno":"Mercoledì","fatturato_locale":260.18,"fatturato_asporto":null,"fatturato_delivery":19.82,"fatturato_totale":280.0,"scontrini_totali":28.0,"coperti_totali":38.0,"coperto_medio":7.368421053,"promo_riscattate":5.0,"totale_promo":35.73,"note":null,"meteo":null},{"data":"2026-02-19","giorno":"Giovedì","fatturato_locale":162.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":162.64,"scontrini_totali":20.0,"coperti_totali":22.0,"coperto_medio":7.392727273,"promo_riscattate":1.0,"totale_promo":9.91,"note":"Inizio Deliveroo","meteo":null},{"data":"2026-02-20","giorno":"Venerdì","fatturato_locale":219.82,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":219.82,"scontrini_totali":24.0,"coperti_totali":29.0,"coperto_medio":7.58,"promo_riscattate":6.0,"totale_promo":42.0,"note":null,"meteo":null},{"data":"2026-02-21","giorno":"Sabato","fatturato_locale":414.6,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":414.6,"scontrini_totali":28.0,"coperti_totali":47.0,"coperto_medio":8.821276596,"promo_riscattate":3.0,"totale_promo":65.82,"note":null,"meteo":null},{"data":"2026-02-23","giorno":"Lunedì","fatturato_locale":201.73,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":201.73,"scontrini_totali":15.0,"coperti_totali":27.0,"coperto_medio":7.471481481,"promo_riscattate":3.0,"totale_promo":36.0,"note":"Festival di Sanremo","meteo":null},{"data":"2026-02-24","giorno":"Martedì","fatturato_locale":232.82,"fatturato_asporto":null,"fatturato_delivery":27.91,"fatturato_totale":260.73,"scontrini_totali":25.0,"coperti_totali":34.0,"coperto_medio":7.668529412,"promo_riscattate":4.0,"totale_promo":45.27,"note":"Festival di Sanremo","meteo":null},{"data":"2026-02-25","giorno":"Mercoledì","fatturato_locale":281.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":281.18,"scontrini_totali":25.0,"coperti_totali":36.0,"coperto_medio":7.810555556,"promo_riscattate":3.0,"totale_promo":38.64,"note":"Festival di Sanremo","meteo":null},{"data":"2026-02-26","giorno":"Giovedì","fatturato_locale":272.05,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":272.05,"scontrini_totali":27.0,"coperti_totali":34.0,"coperto_medio":8.001470588,"promo_riscattate":1.0,"totale_promo":14.36,"note":"Festival di Sanremo","meteo":null},{"data":"2026-02-27","giorno":"Venerdì","fatturato_locale":187.46,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":187.46,"scontrini_totali":19.0,"coperti_totali":24.0,"coperto_medio":7.810833333,"promo_riscattate":2.0,"totale_promo":24.27272727,"note":"Festival di Sanremo","meteo":null},{"data":"2026-02-28","giorno":"Sabato","fatturato_locale":344.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":344.18,"scontrini_totali":28.0,"coperti_totali":46.0,"coperto_medio":7.482173913,"promo_riscattate":6.0,"totale_promo":36.91,"note":"Festival di Sanremo","meteo":null},{"data":"2026-03-02","giorno":"Lunedì","fatturato_locale":118.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":118.36,"scontrini_totali":15.0,"coperti_totali":19.0,"coperto_medio":6.229473684,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-03-03","giorno":"Martedì","fatturato_locale":165.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":165.18,"scontrini_totali":17.0,"coperti_totali":22.0,"coperto_medio":7.508181818,"promo_riscattate":4.0,"totale_promo":31.82,"note":null,"meteo":null},{"data":"2026-03-04","giorno":"Mercoledì","fatturato_locale":139.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":139.91,"scontrini_totali":17.0,"coperti_totali":22.0,"coperto_medio":6.359545455,"promo_riscattate":4.0,"totale_promo":22.55,"note":null,"meteo":null},{"data":"2026-03-05","giorno":"Giovedì","fatturato_locale":99.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":99.36,"scontrini_totali":12.0,"coperti_totali":16.0,"coperto_medio":6.21,"promo_riscattate":3.0,"totale_promo":25.09,"note":null,"meteo":null},{"data":"2026-03-06","giorno":"Venerdì","fatturato_locale":222.0,"fatturato_asporto":null,"fatturato_delivery":10.82,"fatturato_totale":232.82,"scontrini_totali":24.0,"coperti_totali":34.0,"coperto_medio":6.847647059,"promo_riscattate":5.0,"totale_promo":35.18,"note":null,"meteo":null},{"data":"2026-03-07","giorno":"Sabato","fatturato_locale":328.05,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":328.05,"scontrini_totali":19.0,"coperti_totali":43.0,"coperto_medio":7.629069767,"promo_riscattate":5.0,"totale_promo":87.54,"note":null,"meteo":null},{"data":"2026-03-09","giorno":"Lunedì","fatturato_locale":147.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":147.64,"scontrini_totali":13.0,"coperti_totali":18.0,"coperto_medio":8.202222222,"promo_riscattate":4.0,"totale_promo":50.9,"note":null,"meteo":null},{"data":"2026-03-10","giorno":"Martedì","fatturato_locale":172.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":172.36,"scontrini_totali":23.0,"coperti_totali":25.0,"coperto_medio":6.8944,"promo_riscattate":6.0,"totale_promo":73.0,"note":null,"meteo":null},{"data":"2026-03-11","giorno":"Mercoledì","fatturato_locale":146.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":146.91,"scontrini_totali":15.0,"coperti_totali":19.0,"coperto_medio":7.732105263,"promo_riscattate":6.0,"totale_promo":66.91,"note":null,"meteo":null},{"data":"2026-03-12","giorno":"Giovedì","fatturato_locale":164.91,"fatturato_asporto":null,"fatturato_delivery":9.0,"fatturato_totale":173.91,"scontrini_totali":13.0,"coperti_totali":17.0,"coperto_medio":10.23,"promo_riscattate":5.0,"totale_promo":64.82,"note":null,"meteo":null},{"data":"2026-03-13","giorno":"Venerdì","fatturato_locale":129.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":129.91,"scontrini_totali":12.0,"coperti_totali":17.0,"coperto_medio":7.641764706,"promo_riscattate":6.0,"totale_promo":86.18,"note":null,"meteo":"Pioggia"},{"data":"2026-03-14","giorno":"Sabato","fatturato_locale":212.18,"fatturato_asporto":null,"fatturato_delivery":27.91,"fatturato_totale":240.09,"scontrini_totali":12.0,"coperti_totali":26.0,"coperto_medio":9.234230769,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-03-16","giorno":"Lunedì","fatturato_locale":214.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":214.09,"scontrini_totali":23.0,"coperti_totali":29.0,"coperto_medio":7.382413793,"promo_riscattate":6.0,"totale_promo":51.91,"note":null,"meteo":null},{"data":"2026-03-17","giorno":"Martedì","fatturato_locale":184.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":184.36,"scontrini_totali":16.0,"coperti_totali":26.0,"coperto_medio":7.090769231,"promo_riscattate":5.0,"totale_promo":53.0,"note":null,"meteo":null},{"data":"2026-03-18","giorno":"Mercoledì","fatturato_locale":159.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":159.0,"scontrini_totali":22.0,"coperti_totali":28.0,"coperto_medio":5.678571429,"promo_riscattate":11.0,"totale_promo":59.09,"note":null,"meteo":null},{"data":"2026-03-19","giorno":"Giovedì","fatturato_locale":134.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":134.64,"scontrini_totali":13.0,"coperti_totali":19.0,"coperto_medio":7.086315789,"promo_riscattate":1.0,"totale_promo":4.45,"note":null,"meteo":null},{"data":"2026-03-20","giorno":"Venerdì","fatturato_locale":291.82,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":291.82,"scontrini_totali":31.0,"coperti_totali":37.0,"coperto_medio":7.887027027,"promo_riscattate":5.0,"totale_promo":55.64,"note":null,"meteo":null},{"data":"2026-03-21","giorno":"Sabato","fatturato_locale":330.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":330.45,"scontrini_totali":27.0,"coperti_totali":49.0,"coperto_medio":6.743877551,"promo_riscattate":6.0,"totale_promo":80.09,"note":"Manifestazione Libera Don Ciotti","meteo":null},{"data":"2026-03-23","giorno":"Lunedì","fatturato_locale":278.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":278.0,"scontrini_totali":20.0,"coperti_totali":32.0,"coperto_medio":8.6875,"promo_riscattate":8.0,"totale_promo":101.0,"note":null,"meteo":null},{"data":"2026-03-24","giorno":"Martedì","fatturato_locale":105.73,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":105.73,"scontrini_totali":15.0,"coperti_totali":19.0,"coperto_medio":5.564736842,"promo_riscattate":2.0,"totale_promo":9.9,"note":null,"meteo":null},{"data":"2026-03-25","giorno":"Mercoledì","fatturato_locale":200.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":200.0,"scontrini_totali":21.0,"coperti_totali":23.0,"coperto_medio":8.695652174,"promo_riscattate":2.0,"totale_promo":17.82,"note":null,"meteo":null},{"data":"2026-03-26","giorno":"Giovedì","fatturato_locale":217.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":217.18,"scontrini_totali":19.0,"coperti_totali":26.0,"coperto_medio":8.353076923,"promo_riscattate":4.0,"totale_promo":30.09,"note":null,"meteo":null},{"data":"2026-03-27","giorno":"Venerdì","fatturato_locale":250.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":250.45,"scontrini_totali":24.0,"coperti_totali":32.0,"coperto_medio":7.8265625,"promo_riscattate":3.0,"totale_promo":46.91,"note":null,"meteo":null},{"data":"2026-03-28","giorno":"Sabato","fatturato_locale":582.45,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":582.45,"scontrini_totali":38.0,"coperti_totali":71.0,"coperto_medio":8.203521127,"promo_riscattate":8.0,"totale_promo":84.04,"note":null,"meteo":null},{"data":"2026-03-30","giorno":"Lunedì","fatturato_locale":169.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":169.36,"scontrini_totali":18.0,"coperti_totali":24.0,"coperto_medio":7.056666667,"promo_riscattate":1.0,"totale_promo":4.45,"note":null,"meteo":null},{"data":"2026-03-31","giorno":"Martedì","fatturato_locale":110.27,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":110.27,"scontrini_totali":16.0,"coperti_totali":17.0,"coperto_medio":6.486470588,"promo_riscattate":2.0,"totale_promo":20.63,"note":null,"meteo":null},{"data":"2026-04-01","giorno":"Mercoledì","fatturato_locale":294.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":294.18,"scontrini_totali":23.0,"coperti_totali":34.0,"coperto_medio":8.652352941,"promo_riscattate":2.0,"totale_promo":37.37,"note":null,"meteo":null},{"data":"2026-04-02","giorno":"Giovedì","fatturato_locale":181.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":181.36,"scontrini_totali":15.0,"coperti_totali":23.0,"coperto_medio":7.885217391,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-04-03","giorno":"Venerdì","fatturato_locale":223.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":223.64,"scontrini_totali":20.0,"coperti_totali":31.0,"coperto_medio":7.214193548,"promo_riscattate":1.0,"totale_promo":8.91,"note":null,"meteo":null},{"data":"2026-04-04","giorno":"Sabato","fatturato_locale":458.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":458.09,"scontrini_totali":25.0,"coperti_totali":58.0,"coperto_medio":7.898103448,"promo_riscattate":10.0,"totale_promo":149.27,"note":null,"meteo":null},{"data":"2026-04-07","giorno":"Martedì","fatturato_locale":198.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":198.64,"scontrini_totali":14.0,"coperti_totali":22.0,"coperto_medio":9.029090909,"promo_riscattate":5.0,"totale_promo":79.72,"note":null,"meteo":null},{"data":"2026-04-08","giorno":"Mercoledì","fatturato_locale":209.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":209.18,"scontrini_totali":24.0,"coperti_totali":29.0,"coperto_medio":7.213103448,"promo_riscattate":9.0,"totale_promo":71.73,"note":null,"meteo":null},{"data":"2026-04-09","giorno":"Giovedì","fatturato_locale":86.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":86.0,"scontrini_totali":10.0,"coperti_totali":14.0,"coperto_medio":6.142857143,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-04-10","giorno":"Venerdì","fatturato_locale":166.91,"fatturato_asporto":null,"fatturato_delivery":14.51,"fatturato_totale":181.42,"scontrini_totali":15.0,"coperti_totali":19.0,"coperto_medio":9.548421053,"promo_riscattate":1.0,"totale_promo":8.91,"note":null,"meteo":null},{"data":"2026-04-11","giorno":"Sabato","fatturato_locale":210.18,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":210.18,"scontrini_totali":20.0,"coperti_totali":26.0,"coperto_medio":8.083846154,"promo_riscattate":1.0,"totale_promo":22.09,"note":null,"meteo":null},{"data":"2026-04-13","giorno":"Lunedì","fatturato_locale":94.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":94.36,"scontrini_totali":7.0,"coperti_totali":11.0,"coperto_medio":8.578181818,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":"Temporale tutto il giorno"},{"data":"2026-04-14","giorno":"Martedì","fatturato_locale":99.27,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":99.27,"scontrini_totali":11.0,"coperti_totali":16.0,"coperto_medio":6.204375,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-04-15","giorno":"Mercoledì","fatturato_locale":193.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":193.91,"scontrini_totali":20.0,"coperti_totali":26.0,"coperto_medio":7.458076923,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-04-16","giorno":"Giovedì","fatturato_locale":198.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":198.0,"scontrini_totali":16.0,"coperti_totali":24.0,"coperto_medio":8.25,"promo_riscattate":4.0,"totale_promo":72.55,"note":null,"meteo":null},{"data":"2026-04-17","giorno":"Venerdì","fatturato_locale":182.27,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":182.27,"scontrini_totali":18.0,"coperti_totali":29.0,"coperto_medio":6.285172414,"promo_riscattate":4.0,"totale_promo":34.46,"note":null,"meteo":null},{"data":"2026-04-18","giorno":"Sabato","fatturato_locale":363.36,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":363.36,"scontrini_totali":29.0,"coperti_totali":52.0,"coperto_medio":6.987692308,"promo_riscattate":10.0,"totale_promo":108.82,"note":null,"meteo":null},{"data":"2026-04-20","giorno":"Lunedì","fatturato_locale":150.09,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":150.09,"scontrini_totali":13.0,"coperti_totali":22.0,"coperto_medio":6.822272727,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-04-21","giorno":"Martedì","fatturato_locale":166.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":166.91,"scontrini_totali":14.0,"coperti_totali":21.0,"coperto_medio":7.948095238,"promo_riscattate":4.0,"totale_promo":47.73,"note":null,"meteo":null},{"data":"2026-04-22","giorno":"Mercoledì","fatturato_locale":187.82,"fatturato_asporto":null,"fatturato_delivery":14.92,"fatturato_totale":202.74,"scontrini_totali":19.0,"coperti_totali":30.0,"coperto_medio":6.758,"promo_riscattate":2.0,"totale_promo":12.54,"note":null,"meteo":null},{"data":"2026-04-23","giorno":"Giovedì","fatturato_locale":167.91,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":167.91,"scontrini_totali":14.0,"coperti_totali":23.0,"coperto_medio":7.300434783,"promo_riscattate":2.0,"totale_promo":36.45,"note":null,"meteo":null},{"data":"2026-04-24","giorno":"Venerdì","fatturato_locale":247.14,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":247.14,"scontrini_totali":15.0,"coperti_totali":25.0,"coperto_medio":9.8856,"promo_riscattate":3.0,"totale_promo":51.0,"note":"Scontrino medio alto per vendita 2 pale","meteo":null},{"data":"2026-04-25","giorno":"Sabato","fatturato_locale":165.55,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":165.55,"scontrini_totali":9.0,"coperti_totali":21.0,"coperto_medio":7.883333333,"promo_riscattate":13.0,"totale_promo":93.45,"note":null,"meteo":null},{"data":"2026-04-27","giorno":"Lunedì","fatturato_locale":213.64,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":213.64,"scontrini_totali":16.0,"coperti_totali":30.0,"coperto_medio":7.121333333,"promo_riscattate":2.0,"totale_promo":30.45,"note":null,"meteo":null},{"data":"2026-04-28","giorno":"Martedì","fatturato_locale":111.64,"fatturato_asporto":null,"fatturato_delivery":17.09,"fatturato_totale":128.73,"scontrini_totali":11.0,"coperti_totali":19.0,"coperto_medio":6.775263158,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-04-29","giorno":"Mercoledì","fatturato_locale":187.0,"fatturato_asporto":null,"fatturato_delivery":null,"fatturato_totale":187.0,"scontrini_totali":14.0,"coperti_totali":21.0,"coperto_medio":8.904761905,"promo_riscattate":1.0,"totale_promo":28.82,"note":null,"meteo":null},{"data":"2026-04-30","giorno":"Giovedì","fatturato_locale":210.45,"fatturato_asporto":null,"fatturato_delivery":21.64,"fatturato_totale":232.09,"scontrini_totali":21.0,"coperti_totali":30.0,"coperto_medio":7.736333333,"promo_riscattate":4.0,"totale_promo":33.27,"note":null,"meteo":null},{"data":"2026-05-01","giorno":"Venerdì","fatturato_locale":271.37,"fatturato_asporto":13.36,"fatturato_delivery":10.82,"fatturato_totale":295.55,"scontrini_totali":21.0,"coperti_totali":45.0,"coperto_medio":6.567777778,"promo_riscattate":3.0,"totale_promo":50.81,"note":"Festa Lavoratori","meteo":null},{"data":"2026-05-02","giorno":"Sabato","fatturato_locale":334.91,"fatturato_asporto":45.73,"fatturato_delivery":null,"fatturato_totale":380.64,"scontrini_totali":21.0,"coperti_totali":41.0,"coperto_medio":9.283902439,"promo_riscattate":11.0,"totale_promo":171.45,"note":"Solo pranzo","meteo":null},{"data":"2026-05-04","giorno":"Lunedì","fatturato_locale":138.0,"fatturato_asporto":14.36,"fatturato_delivery":null,"fatturato_totale":152.36,"scontrini_totali":11.0,"coperti_totali":20.0,"coperto_medio":7.618,"promo_riscattate":1.0,"totale_promo":17.82,"note":null,"meteo":null},{"data":"2026-05-05","giorno":"Martedì","fatturato_locale":57.72,"fatturato_asporto":53.64,"fatturato_delivery":null,"fatturato_totale":111.36,"scontrini_totali":13.0,"coperti_totali":14.0,"coperto_medio":7.954285714,"promo_riscattate":1.0,"totale_promo":8.91,"note":null,"meteo":"Pioggia al mattino"},{"data":"2026-05-06","giorno":"Mercoledì","fatturato_locale":106.73,"fatturato_asporto":33.27,"fatturato_delivery":26.7,"fatturato_totale":166.7,"scontrini_totali":14.0,"coperti_totali":19.0,"coperto_medio":8.773684211,"promo_riscattate":3.0,"totale_promo":46.82,"note":"Solo pranzo HACCP","meteo":null},{"data":"2026-05-07","giorno":"Giovedì","fatturato_locale":128.0,"fatturato_asporto":37.82,"fatturato_delivery":null,"fatturato_totale":165.82,"scontrini_totali":13.0,"coperti_totali":18.0,"coperto_medio":9.212222222,"promo_riscattate":1.0,"totale_promo":4.45,"note":null,"meteo":null},{"data":"2026-05-11","giorno":"Lunedì","fatturato_locale":278.73,"fatturato_asporto":107.45,"fatturato_delivery":0.0,"fatturato_totale":386.18,"scontrini_totali":31.0,"coperti_totali":46.0,"coperto_medio":8.395217391,"promo_riscattate":4.0,"totale_promo":41.73,"note":"Primo Giorno di Dehor","meteo":null},{"data":"2026-05-12","giorno":"Martedì","fatturato_locale":168.36,"fatturato_asporto":52.09,"fatturato_delivery":0.0,"fatturato_totale":220.45,"scontrini_totali":19.0,"coperti_totali":31.0,"coperto_medio":7.111290323,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":null},{"data":"2026-05-13","giorno":"Mercoledì","fatturato_locale":141.18,"fatturato_asporto":92.09,"fatturato_delivery":38.73,"fatturato_totale":272.0,"scontrini_totali":27.0,"coperti_totali":35.0,"coperto_medio":7.771428571,"promo_riscattate":1.0,"totale_promo":10.82,"note":null,"meteo":null},{"data":"2026-05-14","giorno":"Giovedì","fatturato_locale":197.0,"fatturato_asporto":142.45,"fatturato_delivery":0.0,"fatturato_totale":339.45,"scontrini_totali":24.0,"coperti_totali":45.0,"coperto_medio":7.543333333,"promo_riscattate":1.0,"totale_promo":8.91,"note":null,"meteo":null},{"data":"2026-05-15","giorno":"Venerdì","fatturato_locale":127.81,"fatturato_asporto":45.82,"fatturato_delivery":0.0,"fatturato_totale":173.63,"scontrini_totali":14.0,"coperti_totali":24.0,"coperto_medio":7.234583333,"promo_riscattate":2.0,"totale_promo":53.0,"note":null,"meteo":"Pioggia"},{"data":"2026-05-16","giorno":"Sabato","fatturato_locale":466.18,"fatturato_asporto":173.09,"fatturato_delivery":0.0,"fatturato_totale":639.27,"scontrini_totali":41.0,"coperti_totali":70.0,"coperto_medio":9.132428571,"promo_riscattate":10.0,"totale_promo":77.55,"note":null,"meteo":null},{"data":"2026-05-18","giorno":"Lunedì","fatturato_locale":187.63,"fatturato_asporto":79.73,"fatturato_delivery":0.0,"fatturato_totale":267.36,"scontrini_totali":25.0,"coperti_totali":36.0,"coperto_medio":7.426666667,"promo_riscattate":0.0,"totale_promo":null,"note":null,"meteo":"Pioggia nel pomeriggio"}],"costi":[{"mese":"Gennaio","fatturato":3663.49,"food_cost_eur":1099.047,"food_cost_pct":0.3,"personale_eur":4854.0,"personale_pct":1.325,"costi_fissi":3760.0,"ebitda_eur":-6049.557,"ebitda_pct":-1.6513,"utile_eur":-7754.057},{"mese":"Febbraio","fatturato":5759.99,"food_cost_eur":1727.997,"food_cost_pct":0.3,"personale_eur":4854.0,"personale_pct":0.8427,"costi_fissi":3760.0,"ebitda_eur":-4582.007,"ebitda_pct":-0.7955,"utile_eur":-6286.507},{"mese":"Marzo","fatturato":5322.3,"food_cost_eur":1596.69,"food_cost_pct":0.3,"personale_eur":4854.0,"personale_pct":0.912,"costi_fissi":3760.0,"ebitda_eur":-4888.39,"ebitda_pct":-0.9185,"utile_eur":-6592.89},{"mese":"Aprile","fatturato":5035.66,"food_cost_eur":1510.698,"food_cost_pct":0.3,"personale_eur":4854.0,"personale_pct":0.9639,"costi_fissi":3760.0,"ebitda_eur":-5089.038,"ebitda_pct":-1.0106,"utile_eur":-6793.538},{"mese":"Maggio","fatturato":3570.77,"food_cost_eur":1071.231,"food_cost_pct":0.3,"personale_eur":4854.0,"personale_pct":1.3594,"costi_fissi":3760.0,"ebitda_eur":-6114.461,"ebitda_pct":-1.7124,"utile_eur":-7818.961}],"marketing":[{"mese":"Gennaio","fatturato":3663.49,"lead":755.0,"nuovi_clienti":63.0,"totale_clienti":488.0,"adv_eur":2730.0,"cac":43.3333,"roi_adv_pct":0.1804,"click_link":8193.0,"promo_scaricate":755.0,"promo_utilizzate":63.0},{"mese":"Febbraio","fatturato":5759.99,"lead":650.0,"nuovi_clienti":107.0,"totale_clienti":746.0,"adv_eur":2371.21,"cac":22.1608,"roi_adv_pct":0.4724,"click_link":6302.0,"promo_scaricate":650.0,"promo_utilizzate":107.0},{"mese":"Marzo","fatturato":5322.3,"lead":501.0,"nuovi_clienti":112.0,"totale_clienti":710.0,"adv_eur":2493.83,"cac":22.2663,"roi_adv_pct":0.4664,"click_link":5451.0,"promo_scaricate":501.0,"promo_utilizzate":112.0},{"mese":"Aprile","fatturato":5035.66,"lead":396.0,"nuovi_clienti":78.0,"totale_clienti":656.0,"adv_eur":2502.37,"cac":32.0817,"roi_adv_pct":0.3707,"click_link":4836.0,"promo_scaricate":396.0,"promo_utilizzate":78.0},{"mese":"Maggio","fatturato":3570.77,"lead":253.0,"nuovi_clienti":38.0,"totale_clienti":444.0,"adv_eur":2502.37,"cac":65.8518,"roi_adv_pct":0.1967,"click_link":2717.0,"promo_scaricate":253.0,"promo_utilizzate":38.0}]}
+
+let DB = JSON.parse(localStorage.getItem('focacceria_db') || 'null') || RAW;
+
+const $ = id => document.getElementById(id);
+const fmt = (n,dec=2) => n==null?'—':'€'+n.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fmtN = (n,dec=0) => n==null?'—':n.toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const pct = n => n==null?'—':(n*100).toFixed(1)+'%';
+
+const days = DB.daily.filter(d=>d.fatturato_totale!=null&&d.fatturato_totale>0);
+const lastDay = days[days.length-1];
+
+Chart.defaults.color='#8888aa';
+Chart.defaults.font.family="'DM Mono', monospace";
+Chart.defaults.font.size=10;
+
+const C={accent:'#e8b86d',accent2:'#d4845a',accent3:'#7eb8a4',green:'#5cb88a',red:'#e06060',grid:'rgba(255,255,255,0.05)',text2:'#8888aa'};
+
+const baseOpts={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#111118',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,titleColor:'#f0f0f8',bodyColor:'#8888aa',padding:10}},
+  scales:{x:{grid:{color:C.grid},ticks:{maxRotation:0}},y:{grid:{color:C.grid},ticks:{callback:v=>'€'+v}}}
+};
+
+// ---- DATE FILTER SYSTEM ----
+const charts = {};
+const filterState = {};
+
+function getDateRange(period) {
+  const all = days;
+  if(!all.length) return {from:'2026-01-01',to:'2026-12-31'};
+  const last = all[all.length-1].data;
+  const d = new Date(last);
+  if(period==='7g'){const f=new Date(d);f.setDate(f.getDate()-6);return{from:f.toISOString().slice(0,10),to:last}}
+  if(period==='30g'){const f=new Date(d);f.setDate(f.getDate()-29);return{from:f.toISOString().slice(0,10),to:last}}
+  if(period==='mese'){return{from:last.slice(0,8)+'01',to:last}}
+  if(period==='anno'){return{from:'2026-01-01',to:last}}
+  return{from:'2026-01-01',to:last};
+}
+
+function filterDays(from, to) {
+  return days.filter(d=>d.data>=from&&d.data<=to);
+}
+
+function setFilter(id, period, el) {
+  if(el){
+    const tabs=el.closest('.date-filter')?.querySelectorAll('.period-tab')||[];
+    tabs.forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  const range = getDateRange(period);
+  filterState[id] = range;
+  const fromEl=$(id+'-from'), toEl=$(id+'-to');
+  if(fromEl) fromEl.value=range.from;
+  if(toEl) toEl.value=range.to;
+  redrawChart(id);
+}
+
+function applyFilter(id) {
+  const from=$(id+'-from')?.value;
+  const to=$(id+'-to')?.value;
+  if(!from||!to) return;
+  filterState[id]={from,to};
+  // deactivate tabs
+  document.querySelectorAll('#'+id+'-from').forEach(el=>{
+    el.closest('.date-filter')?.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
+  });
+  redrawChart(id);
+}
+
+function redrawChart(id) {
+  const state = filterState[id]||getDateRange('30g');
+  const data = filterDays(state.from, state.to);
+  if(charts[id]) charts[id].destroy();
+
+  if(id==='fat30') {
+    charts[id]=new Chart($('chart-fat30'),{type:'bar',data:{labels:data.map(d=>d.data.slice(5)),datasets:[{data:data.map(d=>d.fatturato_totale),backgroundColor:data.map((_,i)=>i===data.length-1?C.accent:'rgba(232,184,109,0.35)'),borderRadius:4,borderSkipped:false}]},options:baseOpts});
+  }
+  if(id==='promo30') {
+    charts[id]=new Chart($('chart-promo30'),{type:'line',data:{labels:data.map(d=>d.data.slice(5)),datasets:[{data:data.map(d=>d.promo_riscattate||0),borderColor:C.accent3,backgroundColor:'rgba(126,184,164,0.1)',tension:0.4,fill:true,pointRadius:2}]},options:{...baseOpts,scales:{x:{grid:{color:C.grid}},y:{grid:{color:C.grid},ticks:{callback:v=>v}}}}});
+  }
+  if(id==='copmed') {
+    charts[id]=new Chart($('chart-copmed'),{type:'line',data:{labels:data.map(d=>d.data.slice(5)),datasets:[{data:data.map(d=>d.coperto_medio||0),borderColor:C.accent2,backgroundColor:'rgba(212,132,90,0.1)',tension:0.4,fill:true,pointRadius:2}]},options:{...baseOpts,scales:{x:{grid:{color:C.grid}},y:{grid:{color:C.grid},ticks:{callback:v=>'€'+v.toFixed(1)}}}}});
+  }
+  if(id==='trend') {
+    charts[id]=new Chart($('chart-trend'),{type:'line',data:{labels:data.map(d=>d.data.slice(5)),datasets:[{data:data.map(d=>d.fatturato_totale),borderColor:C.accent,backgroundColor:'rgba(232,184,109,0.08)',tension:0.3,fill:true,pointRadius:data.length>60?0:3,pointBackgroundColor:C.accent,borderWidth:2}]},options:baseOpts});
+  }
+  if(id==='coptrend') {
+    charts[id]=new Chart($('chart-coptrend'),{type:'line',data:{labels:data.map(d=>d.data.slice(5)),datasets:[{label:'Coperti',data:data.map(d=>d.coperti_totali||0),borderColor:C.accent3,tension:0.3,pointRadius:2},{label:'Scontrini',data:data.map(d=>d.scontrini_totali||0),borderColor:C.accent,tension:0.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:C.text2,boxWidth:10}}},scales:{x:{grid:{color:C.grid}},y:{grid:{color:C.grid},ticks:{callback:v=>v}}}}});
+  }
+}
+
+// ---- SAME PERIOD COMPARISON ----
+function samePeriodLastMonth(currentMonth, dayOfMonth) {
+  // Sum fatturato for current month up to dayOfMonth
+  const currPrefix = '2026-' + String(currentMonth).padStart(2,'0');
+  const prevMonth = currentMonth - 1;
+  const prevPrefix = '2026-' + String(prevMonth).padStart(2,'0');
+
+  const currTotal = days.filter(d=>d.data.startsWith(currPrefix)&&parseInt(d.data.slice(8))<=dayOfMonth).reduce((s,d)=>s+d.fatturato_totale,0);
+  const prevTotal = days.filter(d=>d.data.startsWith(prevPrefix)&&parseInt(d.data.slice(8))<=dayOfMonth).reduce((s,d)=>s+d.fatturato_totale,0);
+  return {curr:currTotal, prev:prevTotal, diff:prevTotal>0?(currTotal-prevTotal)/prevTotal:null};
+}
+
+function badge(val) {
+  if(val==null) return '';
+  const cls=val>0?'up':'down';
+  const arrow=val>0?'▲':'▼';
+  return '<span class="badge '+cls+'">'+arrow+' '+Math.abs(val*100).toFixed(1)+'%</span>';
+}
+
+// ---- PAGE OGGI ----
+function initOggi(selectedDate) {
+  // Use real today by default
+  const realToday = new Date().toISOString().slice(0,10);
+  const targetDate = selectedDate || realToday;
+  
+  // Set date picker to today on first load
+  if(!selectedDate) {
+    $('overview-date').value = realToday;
+  }
+
+  // Find data for target date, or use empty object
+  const today = DB.daily.find(d=>d.data===targetDate) || {
+    data: targetDate,
+    giorno: new Date(targetDate).toLocaleDateString('it-IT',{weekday:'long'}).replace(/^\w/,c=>c.toUpperCase()),
+    fatturato_totale: null, fatturato_locale: null, fatturato_asporto: null, fatturato_delivery: null,
+    scontrini_totali: null, coperti_totali: null, coperti_locale: null, coperti_asporto: null,
+    coperto_medio: null, promo_riscattate: null
+  };
+
+  // Find yesterday (previous day with data)
+  const prevDays = days.filter(d=>d.data<targetDate);
+  const yesterday = prevDays.length ? prevDays[prevDays.length-1] : null;
+
+  $('today-label').textContent = today.data + ' — ' + today.giorno;
+  $('last-update-sidebar').innerHTML = 'Ultimo dato<br>' + (lastDay?.data||'—');
+
+  const currentMonth = parseInt(today.data.slice(5,7));
+  const dayOfMonth = parseInt(today.data.slice(8));
+  const sp = samePeriodLastMonth(currentMonth, dayOfMonth);
+
+  // Same weekday last week
+  const targetDateObj = new Date(targetDate);
+  const lastWeekDate = new Date(targetDateObj);
+  lastWeekDate.setDate(lastWeekDate.getDate()-7);
+  const lastWeekStr = lastWeekDate.toISOString().slice(0,10);
+  const lastWeekDay = days.find(d=>d.data===lastWeekStr);
+  const fatDiffWeek = (lastWeekDay&&today?.fatturato_totale&&lastWeekDay.fatturato_totale)?(today.fatturato_totale-lastWeekDay.fatturato_totale)/lastWeekDay.fatturato_totale:null;
+
+  // Same day last month
+  const lastMonthDate = new Date(targetDateObj);
+  lastMonthDate.setMonth(lastMonthDate.getMonth()-1);
+  const lastMonthStr = lastMonthDate.toISOString().slice(0,10);
+  const lastMonthDay = days.find(d=>d.data===lastMonthStr);
+  const fatDiffMonth = (lastMonthDay&&today?.fatturato_totale&&lastMonthDay.fatturato_totale)?(today.fatturato_totale-lastMonthDay.fatturato_totale)/lastMonthDay.fatturato_totale:null;
+
+  // Media coperti del mese corrente
+  const currMonDays = days.filter(d=>d.data.startsWith('2026-'+String(currentMonth).padStart(2,'0'))&&d.coperti_totali>0&&d.data<=targetDate);
+  const mediaCopertiMese = currMonDays.length?currMonDays.reduce((s,d)=>s+d.coperti_totali,0)/currMonDays.length:0;
+
+  const todayFat = today?.fatturato_totale || 0;
+  const todayScontrini = today?.scontrini_totali || null;
+  const todayCoperti = today?.coperti_totali || null;
+  const todayCopMedio = today?.coperto_medio || 0;
+
+  const kpiBorderClass = (val) => val==null?'':val>0?'positive-card':'negative-card';
+  $('kpi-oggi').innerHTML = [
+    {label:'Fatturato oggi',value:todayFat>0?fmt(todayFat):'€0.00',sub:(fatDiffWeek!=null?badge(fatDiffWeek)+' sett. scorsa':'')+' '+(fatDiffMonth!=null?badge(fatDiffMonth)+' mese scorso':''),cls:'',border:fatDiffWeek!=null?kpiBorderClass(fatDiffWeek):''},
+    {label:'Fatturato '+['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][currentMonth],value:fmt(sp.curr,0),sub:badge(sp.diff)+' vs stesso periodo '+['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][currentMonth-1],cls:'',border:kpiBorderClass(sp.diff)},
+    {label:'Scontrini oggi',value:todayScontrini!=null?fmtN(todayScontrini):'0',sub:'Coperto medio: '+(todayCopMedio>0?'€'+todayCopMedio.toFixed(2):'—'),cls:'',border:'neutral-card'},
+    {label:'Coperti oggi',value:todayCoperti!=null?fmtN(todayCoperti):'0',sub:'Media mese: '+mediaCopertiMese.toFixed(1),cls:'',border:todayCoperti!=null?(todayCoperti>=mediaCopertiMese?'positive-card':'negative-card'):'neutral-card'}
+  ].map(k=>'<div class="kpi-card '+k.cls+' '+k.border+'"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div></div>').join('');
+
+  // Destroy existing charts before re-render
+  ['chart-fat30','chart-canali-fat','chart-canali-cop','chart-dow','chart-promo30','chart-copmed'].forEach(id=>{
+    const c=Chart.getChart(id);if(c)c.destroy();
+  });
+
+  // Charts - init with delay to ensure canvas ready
+  setTimeout(() => {
+    setFilter('fat30','30g',null);
+    setFilter('promo30','30g',null);
+    setFilter('copmed','mese',null);
+  }, 80);
+
+  // Donut fatturato canali
+  const locale=today?.fatturato_locale||0,asporto=today?.fatturato_asporto||0,delivery=today?.fatturato_delivery||0;
+  const totFat=locale+asporto+delivery;
+  const fatVals=[locale,asporto,delivery].filter(v=>v>0);
+  const fatLabels=['Locale','Asporto','Delivery'].filter((_,i)=>[locale,asporto,delivery][i]>0);
+  const cols=[C.accent,C.accent3,C.accent2];
+  new Chart($('chart-canali-fat'),{type:'doughnut',data:{labels:fatLabels,datasets:[{data:fatVals,backgroundColor:cols.slice(0,fatVals.length),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' €'+ctx.parsed.toFixed(2)}}},cutout:'70%'}});
+  $('donut-fat').innerHTML=fatLabels.map((l,i)=>'<div class="donut-label-row"><div style="display:flex;align-items:center"><div class="donut-dot" style="background:'+cols[i]+'"></div>'+l+'</div><span style="color:var(--text)">'+  (totFat>0?(fatVals[i]/totFat*100).toFixed(0)+'%':'—')+'</span></div>').join('');
+
+  // Donut coperti canali
+  const copLoc=today?.coperti_locale||0,copAsp=today?.coperti_asporto||0,copDel=today?.coperti_delivery||0;
+  const totCop=copLoc+copAsp+copDel;
+  const copVals=[copLoc,copAsp,copDel].filter(v=>v>0);
+  const copLabels=['Locale','Asporto','Delivery'].filter((_,i)=>[copLoc,copAsp,copDel][i]>0);
+
+  // Donut fatturato
+  const fatChartInst=Chart.getChart('chart-canali-fat');if(fatChartInst)fatChartInst.destroy();
+  if(fatVals.length>0){
+    $('wrap-canali-fat').style.display='block';
+    if(!$('chart-canali-fat')){$('wrap-canali-fat').innerHTML='<canvas id="chart-canali-fat"></canvas>';}
+    new Chart($('chart-canali-fat'),{type:'doughnut',data:{labels:fatLabels,datasets:[{data:fatVals,backgroundColor:cols.slice(0,fatVals.length),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' €'+ctx.parsed.toFixed(2)}}},cutout:'70%'}});
+    $('donut-fat').innerHTML=fatLabels.map((l,i)=>'<div class="donut-label-row"><div style="display:flex;align-items:center"><div class="donut-dot" style="background:'+cols[i]+'"></div>'+l+'</div><span style="color:var(--text)">'+(totFat>0?(fatVals[i]/totFat*100).toFixed(0)+'%':'—')+'</span></div>').join('');
+  } else {
+    $('wrap-canali-fat').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:12px">Nessun dato fatturato per canale oggi</div>';
+    $('donut-fat').innerHTML='';
+  }
+
+  // Donut coperti
+  const copChartInst=Chart.getChart('chart-canali-cop');if(copChartInst)copChartInst.destroy();
+  if(copVals.length>0){
+    if(!$('chart-canali-cop')){$('wrap-canali-cop').innerHTML='<canvas id="chart-canali-cop"></canvas>';}
+    new Chart($('chart-canali-cop'),{type:'doughnut',data:{labels:copLabels,datasets:[{data:copVals,backgroundColor:cols.slice(0,copVals.length),borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed+' cop.'}}},cutout:'70%'}});
+    $('donut-cop').innerHTML=copLabels.map((l,i)=>'<div class="donut-label-row"><div style="display:flex;align-items:center"><div class="donut-dot" style="background:'+cols[i]+'"></div>'+l+'</div><span style="color:var(--text)">'+(totCop>0?(copVals[i]/totCop*100).toFixed(0)+'%':'—')+'</span></div>').join('');
+  } else {
+    $('wrap-canali-cop').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-size:12px">Nessun dato coperti per canale oggi</div>';
+    $('donut-cop').innerHTML='';
+  }
+
+  // DOW
+  const dow=['Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato','Domenica'];
+  const dowAvg=dow.map(g=>{const ds=days.filter(d=>d.giorno===g);return ds.length?ds.reduce((s,d)=>s+d.fatturato_totale,0)/ds.length:0;});
+  new Chart($('chart-dow'),{type:'bar',data:{labels:['Lun','Mar','Mer','Gio','Ven','Sab','Dom'],datasets:[{data:dowAvg,backgroundColor:dowAvg.map(v=>v===Math.max(...dowAvg)?C.accent:'rgba(232,184,109,0.3)'),borderRadius:4}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{callback:v=>'€'+Math.round(v)}}}}});
+}
+
+// ---- PAGE ANDAMENTO ----
+function initAndamento() {
+  setFilter('trend','7g',null);
+  setFilter('coptrend','30g',null);
+  buildHeatmap();
+}
+
+function buildHeatmap() {
+  const byDate={};
+  days.forEach(d=>{byDate[d.data]=d.fatturato_totale;});
+  const max=Math.max(...Object.values(byDate));
+  const colors=['#1a1a24','#5c1a1a','#8c3a3a','#c45a5a','#e08080','#5cb88a'];
+  const getColor=v=>{if(!v||v===0)return'#1a1a24';const i=Math.min(5,Math.floor((v/max)*5)+1);return colors[i];};
+  const container=$('heatmap');
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:grid;grid-template-columns:repeat(53,1fr);gap:3px;width:100%';
+  const tooltip=$('tooltip');
+  const start=new Date('2026-01-01');
+  for(let w=0;w<53;w++){
+    for(let dow=0;dow<7;dow++){
+      const d=new Date(start);d.setDate(d.getDate()+w*7+dow);
+      if(d.getFullYear()>2026)break;
+      const ds=d.toISOString().slice(0,10);
+      const val=byDate[ds]||0;
+      const cell=document.createElement('div');
+      cell.style.cssText='aspect-ratio:1;border-radius:2px;background:'+getColor(val)+';cursor:pointer';
+      cell.addEventListener('mouseenter',e=>{tooltip.style.display='block';tooltip.innerHTML='<div style="color:var(--text3);margin-bottom:4px">'+ds+'</div><div style="color:var(--accent);font-family:Syne,sans-serif;font-size:14px;font-weight:700">'+(val>0?'€'+val.toFixed(0):'Chiuso')+'</div>';});
+      cell.addEventListener('mousemove',e=>{tooltip.style.left=(e.clientX+12)+'px';tooltip.style.top=(e.clientY-30)+'px';});
+      cell.addEventListener('mouseleave',()=>{tooltip.style.display='none';});
+      wrap.appendChild(cell);
+    }
+  }
+  container.appendChild(wrap);
+}
+
+// ---- PAGE MENSILE ----
+function initMensile() {
+  const mesi=DB.costi.filter(m=>m.fatturato>0);
+  const mesiN=mesi.map(m=>m.mese.slice(0,3));
+  const curr=mesi[mesi.length-1];
+  const prev=mesi[mesi.length-2];
+
+  // Same period comparison - use daily data up to today's day number
+  const today = lastDay?.data || new Date().toISOString().slice(0,10);
+  const dayOfMonth = parseInt(today.slice(8));
+  const currentMonth = parseInt(today.slice(5,7));
+  const prevMonth = currentMonth - 1;
+  const currPrefix = '2026-' + String(currentMonth).padStart(2,'0');
+  const prevPrefix = '2026-' + String(prevMonth).padStart(2,'0');
+  const currSP = days.filter(d=>d.data.startsWith(currPrefix)&&parseInt(d.data.slice(8))<=dayOfMonth).reduce((s,d)=>s+d.fatturato_totale,0);
+  const prevSP = days.filter(d=>d.data.startsWith(prevPrefix)&&parseInt(d.data.slice(8))<=dayOfMonth).reduce((s,d)=>s+d.fatturato_totale,0);
+  const fatDiffMens = prevSP>0?(currSP-prevSP)/prevSP:null;
+  const mesiNames = ['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const prevMonthName = mesiNames[prevMonth]||'';
+
+  $('kpi-mensili').innerHTML=[
+    {label:'Fatturato '+curr.mese,value:fmt(curr.fatturato,0),sub:(fatDiffMens!=null?badge(fatDiffMens):'')+' vs stesso periodo '+prevMonthName,border:fatDiffMens!=null?(fatDiffMens>0?'positive-card':'negative-card'):''},
+    {label:'EBITDA '+curr.mese,value:fmt(curr.ebitda_eur,0),sub:pct(curr.ebitda_pct)+' sul fatturato',border:curr.ebitda_eur>0?'positive-card':'negative-card'},
+    {label:'Food cost',value:pct(curr.food_cost_pct),sub:fmt(curr.food_cost_eur)+' / mese',border:curr.food_cost_pct<0.32?'positive-card':'negative-card'},
+    {label:'Personale',value:fmt(curr.personale_eur,0),sub:pct(curr.personale_pct)+' incidenza',border:'neutral-card'}
+  ].map(k=>'<div class="kpi-card '+k.border+'"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div></div>').join('');
+
+  new Chart($('chart-fat-mensile'),{type:'bar',data:{labels:mesiN,datasets:[{label:'Fatturato',data:mesi.map(m=>m.fatturato),backgroundColor:mesi.map((_,i)=>i===mesi.length-1?C.accent:'rgba(232,184,109,0.4)'),borderRadius:6}]},options:baseOpts});
+  new Chart($('chart-pl'),{type:'bar',data:{labels:mesiN,datasets:[{label:'Fatturato',data:mesi.map(m=>m.fatturato),backgroundColor:'rgba(92,184,138,0.6)',borderRadius:4},{label:'Food Cost',data:mesi.map(m=>m.food_cost_eur),backgroundColor:'rgba(232,184,109,0.6)',borderRadius:4},{label:'Personale',data:mesi.map(m=>m.personale_eur),backgroundColor:'rgba(212,132,90,0.6)',borderRadius:4},{label:'Fissi',data:mesi.map(m=>m.costi_fissi),backgroundColor:'rgba(136,136,170,0.4)',borderRadius:4}]},options:{...baseOpts,plugins:{...baseOpts.plugins,legend:{display:true,labels:{color:C.text2,boxWidth:10}}}}});
+
+  const thead='<thead><tr>'+['Mese','Fatturato','Food Cost','Personale','Costi Fissi','EBITDA €','EBITDA %'].map(h=>'<th>'+h+'</th>').join('')+'</tr></thead>';
+  const tbody='<tbody>'+mesi.map(m=>'<tr><td>'+m.mese+'</td><td class="num">'+fmt(m.fatturato)+'</td><td class="num">'+fmt(m.food_cost_eur)+'</td><td class="num">'+fmt(m.personale_eur)+'</td><td class="num">'+fmt(m.costi_fissi)+'</td><td class="num '+(m.ebitda_eur>0?'positive':'negative')+'">'+fmt(m.ebitda_eur)+'</td><td class="num '+(m.ebitda_pct>0?'positive':'negative')+'">'+pct(m.ebitda_pct)+'</td></tr>').join('')+'</tbody>';
+  $('table-mensile').innerHTML=thead+tbody;
+}
+
+// ---- PAGE MARKETING ----
+function initMarketing() {
+  const mkt=DB.marketing.filter(m=>m.fatturato!=null);
+  const curr=mkt[mkt.length-1];
+  const prev=mkt[mkt.length-2];
+  const mesiN=mkt.map(m=>m.mese.slice(0,3));
+
+  // Same period comparison for leads
+  const currentMonth=parseInt(lastDay.data.slice(5,7));
+  const dayOfMonth=parseInt(lastDay.data.slice(8));
+  const currMonthName=['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][currentMonth];
+  const prevMonthName=['','Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'][currentMonth-1];
+
+  // For leads we compare monthly totals proportionally (we only have monthly data)
+  const leadDiff=prev&&prev.lead>0?(curr.lead-prev.lead)/prev.lead:null;
+
+  $('kpi-mkt').innerHTML=[
+    {label:'Lead '+currMonthName,value:fmtN(curr.lead),sub:badge(leadDiff)+' vs stesso periodo '+prevMonthName,border:leadDiff!=null?(leadDiff>0?'positive-card':'negative-card'):''},
+    {label:'Nuovi clienti',value:fmtN(curr.nuovi_clienti),sub:'CAC: €'+curr.cac?.toFixed(0),border:'neutral-card'},
+    {label:'ROI ADV',value:pct(curr.roi_adv_pct),sub:'Spesa: €'+curr.adv_eur?.toFixed(0),border:curr.roi_adv_pct>0.3?'positive-card':'negative-card'},
+    {label:'Click totali',value:fmtN(curr.click_link),sub:'Promo utilizzate: '+fmtN(curr.promo_utilizzate),border:'neutral-card'}
+  ].map(k=>'<div class="kpi-card '+k.border+'"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.value+'</div><div class="kpi-sub">'+k.sub+'</div></div>').join('');
+
+// chart-lead removed
+  new Chart($('chart-roi'),{type:'line',data:{labels:mesiN,datasets:[{data:mkt.map(m=>(m.roi_adv_pct||0)*100),borderColor:C.accent,backgroundColor:'rgba(232,184,109,0.1)',tension:0.4,fill:true,pointRadius:4,pointBackgroundColor:C.accent}]},options:{...baseOpts,scales:{x:{grid:{color:C.grid}},y:{grid:{color:C.grid},ticks:{callback:v=>v.toFixed(0)+'%'}}}}});
+
+  // Funnel chart with conversion rates
+  const funnelLabels = mesiN;
+  const clickData = mkt.map(m=>m.click_link||0);
+  const leadData = mkt.map(m=>m.promo_scaricate||0);
+  const clientiData = mkt.map(m=>m.promo_utilizzate||0);
+  
+  // Calculate conversion rates for annotation
+  const convClickLead = mkt.map(m=> m.click_link>0?((m.promo_scaricate||0)/m.click_link*100).toFixed(1)+'%':'—');
+  const convLeadClienti = mkt.map(m=> m.promo_scaricate>0?((m.promo_utilizzate||0)/m.promo_scaricate*100).toFixed(1)+'%':'—');
+
+  new Chart($('chart-funnel'),{
+    type:'bar',
+    data:{
+      labels:funnelLabels,
+      datasets:[
+        {label:'Click',data:clickData,backgroundColor:'rgba(126,184,164,0.4)',borderRadius:4},
+        {label:'Lead (Promo Scaricate)',data:leadData,backgroundColor:'rgba(232,184,109,0.5)',borderRadius:4},
+        {label:'Clienti (Promo Utilizzate)',data:clientiData,backgroundColor:'rgba(92,184,138,0.7)',borderRadius:4}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{color:C.text2,boxWidth:10}},
+        tooltip:{
+          backgroundColor:'#111118',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,
+          callbacks:{
+            afterBody: ctx => {
+              const i = ctx[0].dataIndex;
+              return ['','→ Click→Lead: '+convClickLead[i],'→ Lead→Cliente: '+convLeadClienti[i]];
+            }
+          }
+        }
+      },
+      scales:{x:{grid:{color:C.grid}},y:{grid:{color:C.grid},ticks:{callback:v=>v}}}
+    }
+  });
+  
+  // Show conversion rates below chart
+  const funnelCard = $('chart-funnel').closest('.chart-card');
+  const ratesDiv = document.createElement('div');
+  ratesDiv.style.cssText = 'display:flex;gap:16px;margin-top:16px;flex-wrap:wrap';
+  mesiN.forEach((m,i) => {
+    ratesDiv.innerHTML += '<div style="background:var(--bg4);border-radius:8px;padding:8px 12px;font-size:10px">'+
+      '<div style="color:var(--text3);margin-bottom:4px">'+m+'</div>'+
+      '<div style="color:var(--accent3)">Click→Lead: <strong>'+convClickLead[i]+'</strong></div>'+
+      '<div style="color:var(--green)">Lead→Cliente: <strong>'+convLeadClienti[i]+'</strong></div>'+
+      '</div>';
+  });
+  funnelCard.appendChild(ratesDiv);
+
+  new Chart($('chart-cac'),{type:'bar',data:{labels:mesiN,datasets:[{data:mkt.map(m=>m.cac||0),backgroundColor:'rgba(212,132,90,0.6)',borderRadius:4}]},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{callback:v=>'€'+v.toFixed(0)}}}}});
+// chart-promo-mkt removed
+}
+
+// ---- WHAT IF ----
+let wiChart;
+function calcWhatIf() {
+  const fatTarget=parseFloat($('wi-fat-target').value)||0;
+  const giorni=parseFloat($('wi-giorni').value)||25;
+  const foodcostPct=parseFloat($('wi-foodcost').value)/100;
+  const personale=parseFloat($('wi-personale').value)||4854;
+  const fissi=parseFloat($('wi-fissi').value)||3760;
+  const fatMensile=fatTarget*giorni;
+  const foodCost=fatMensile*foodcostPct;
+  const margine=fatMensile-foodCost;
+  const ebitda=margine-personale-fissi;
+  const utile=ebitda-1307-397.5;
+  $('wi-results').innerHTML='<div style="display:flex;flex-direction:column;gap:0">'+[['Fatturato mensile',fmt(fatMensile,0),''],['Food Cost ('+((foodcostPct*100).toFixed(0))+'%)',fmt(foodCost,0),'negative'],['Margine lordo',fmt(margine,0),margine>0?'positive':'negative'],['Personale',fmt(personale,0),'negative'],['Costi fissi',fmt(fissi,0),'negative'],['EBITDA',fmt(ebitda,0),ebitda>0?'positive':'negative'],['Utile stimato',fmt(utile,0),utile>0?'positive':'negative']].map(([l,v,cls])=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:11px;color:var(--text2)">'+l+'</span><span class="num '+cls+'" style="font-family:Syne,sans-serif;font-weight:700;font-size:14px">'+v+'</span></div>').join('')+'</div>';
+  const mesiN=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const reale=DB.costi.map(m=>m.fatturato);
+  const proiezione=mesiN.map((_,i)=>i<reale.length?reale[i]:fatMensile);
+  if(wiChart)wiChart.destroy();
+  wiChart=new Chart($('chart-whatif'),{type:'line',data:{labels:mesiN,datasets:[{label:'Reale',data:reale,borderColor:C.accent3,tension:0.3,fill:false,pointRadius:4},{label:'Scenario',data:proiezione,borderColor:C.accent,backgroundColor:'rgba(232,184,109,0.1)',tension:0.3,fill:true,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:C.text2,boxWidth:10}}},scales:{x:{grid:{color:C.grid}},y:{grid:{color:C.grid},ticks:{callback:v=>'€'+v.toFixed(0)}}}}});
+}
+function resetWhatIf(){$('wi-fat-target').value='400';$('wi-giorni').value='25';$('wi-foodcost').value='30';$('wi-personale').value='4854';$('wi-fissi').value='3760';calcWhatIf();}
+
+// ---- INSERIMENTO ----
+function initInserimento() {
+  $('ins-data').value=new Date().toISOString().slice(0,10);
+  renderRecentTable();
+}
+
+function saveDay() {
+  const locale=parseFloat($('ins-locale').value)||null;
+  const asporto=parseFloat($('ins-asporto').value)||null;
+  const delivery=parseFloat($('ins-delivery').value)||null;
+  const totFat=(locale||0)+(asporto||0)+(delivery||0)||null;
+  const copLoc=parseFloat($('ins-cop-locale').value)||null;
+  const copAsp=parseFloat($('ins-cop-asporto').value)||null;
+  const copDel=parseFloat($('ins-cop-delivery').value)||null;
+  const totCop=(copLoc||0)+(copAsp||0)+(copDel||0)||null;
+  const data={
+    data:$('ins-data').value,
+    giorno:new Date($('ins-data').value).toLocaleDateString('it-IT',{weekday:'long'}).replace(/^\w/,c=>c.toUpperCase()),
+    fatturato_locale:locale,fatturato_asporto:asporto,fatturato_delivery:delivery,fatturato_totale:totFat,
+    fatturato_promo:parseFloat($('ins-fat-promo').value)||null,
+    scontrini_totali:parseFloat($('ins-scontrini').value)||null,
+    coperti_locale:copLoc,coperti_asporto:copAsp,coperti_delivery:copDel,coperti_totali:totCop,
+    coperto_medio:totCop&&totFat?totFat/totCop:null,
+    promo_riscattate:parseFloat($('ins-promo').value)||null,
+    totale_promo:null,note:$('ins-note').value||null,meteo:null
+  };
+  const idx=DB.daily.findIndex(d=>d.data===data.data);
+  if(idx>=0)DB.daily[idx]={...DB.daily[idx],...data};
+  else DB.daily.push(data);
+  DB.daily.sort((a,b)=>a.data.localeCompare(b.data));
+
+  // Lead e Click — aggiornamento mensile (sovrascrive, non somma)
+  const leadVal = parseFloat($('ins-lead').value)||null;
+  const clickVal = parseFloat($('ins-click').value)||null;
+  if(leadVal!=null || clickVal!=null) {
+    const month = data.data.slice(0,7); // es. "2026-05"
+    const mesiNames = ['','Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+    const monthNum = parseInt(data.data.slice(5,7));
+    const monthName = mesiNames[monthNum];
+    const mktIdx = DB.marketing.findIndex(m=>m.mese===monthName);
+    if(mktIdx>=0) {
+      if(leadVal!=null) DB.marketing[mktIdx].lead = leadVal;
+      if(clickVal!=null) DB.marketing[mktIdx].click_link = clickVal;
+    } else {
+      DB.marketing.push({mese:monthName, fatturato:null, lead:leadVal, nuovi_clienti:null, totale_clienti:null, adv_eur:null, cac:null, roi_adv_pct:null, click_link:clickVal, promo_scaricate:null, promo_utilizzate:null});
+    }
+  }
+
+  localStorage.setItem('focacceria_db',JSON.stringify(DB));
+  renderRecentTable();
+  ['ins-locale','ins-asporto','ins-delivery','ins-fat-promo','ins-scontrini','ins-cop-locale','ins-cop-asporto','ins-cop-delivery','ins-promo','ins-note','ins-lead','ins-click'].forEach(id=>{$(id).value='';});
+  const btn=document.querySelector('#page-inserimento .btn-primary');
+  const orig=btn.textContent;btn.textContent='✓ Salvato!';btn.style.background='var(--green)';
+  setTimeout(()=>{btn.textContent=orig;btn.style.background='';},2000);
+}
+
+function renderRecentTable() {
+  const recent=[...DB.daily].filter(d=>d.fatturato_totale>0).slice(-7).reverse();
+  $('table-recent').innerHTML='<thead><tr><th>Data</th><th>Fatturato</th><th>Coperti</th><th>Note</th></tr></thead><tbody>'+recent.map(d=>'<tr><td>'+d.data+'<br><span style="color:var(--text3);font-size:10px">'+( d.giorno||'')+'</span></td><td class="num">'+fmt(d.fatturato_totale)+'</td><td class="num">'+fmtN(d.coperti_totali)+'</td><td style="max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text3);font-size:10px">'+(d.note||'')+'</td></tr>').join('')+'</tbody>';
+}
+
+// ---- CHANGE OVERVIEW DAY ----
+function changeOverviewDay(date) {
+  if(!date) return;
+  $('overview-date').value = date;
+  // Destroy all oggi charts
+  ['chart-fat30','chart-dow','chart-promo30','chart-copmed'].forEach(id=>{
+    const c=Chart.getChart(id);if(c)c.destroy();
+  });
+  // Reset wrappers - restore canvas elements
+  $('wrap-canali-fat').innerHTML='<canvas id="chart-canali-fat"></canvas>';
+  $('wrap-canali-cop').innerHTML='<canvas id="chart-canali-cop"></canvas>';
+  // Reset KPI and donut labels
+  $('kpi-oggi').innerHTML='';
+  $('donut-fat').innerHTML='';
+  $('donut-cop').innerHTML='';
+  // Re-init after DOM settles
+  setTimeout(()=>initOggi(date), 50);
+}
+
+// ---- NAVIGATION ----
+const initializedPages={};
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick').includes("'"+name+"'"))n.classList.add('active');});
+  if(!initializedPages[name]){
+    if(name==='oggi')initOggi(null);
+    else if(name==='andamento')initAndamento();
+    else if(name==='mensile')initMensile();
+    else if(name==='marketing')initMarketing();
+    else if(name==='whatif')calcWhatIf();
+    else if(name==='inserimento')initInserimento();
+    initializedPages[name]=true;
+  }
+  closeSidebar();
+}
+
+function toggleSidebar(){$('sidebar').classList.toggle('open');$('overlay').classList.toggle('active');}
+function closeSidebar(){$('sidebar').classList.remove('open');$('overlay').classList.remove('active');}
+
+function checkPwd(){
+  if($('pwd-input').value==='hupci7-pitduf-tagWev'){
+    sessionStorage.setItem('fdl_ok','1');
+    $('pwd-screen').style.display='none';
+    showPage('oggi');
+  } else {
+    var e=$('pwd-error');e.style.display='block';$('pwd-input').value='';
+    setTimeout(function(){e.style.display='none';},2500);
+  }
+}
+$('pwd-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPwd();});
+
+if(sessionStorage.getItem('fdl_ok')==='1'){
+  $('pwd-screen').style.display='none';
+  showPage('oggi');
+}
+</script>
+</body>
+</html>
